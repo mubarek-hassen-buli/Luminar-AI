@@ -10,12 +10,19 @@ export const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 export const MODELS = {
   GEMINI_PRO: "gemini-2.5-flash",
   GEMINI_FLASH: "gemini-2.5-flash",
-  EMBEDDING: "text-embedding-001",
+  EMBEDDING: "gemini-embedding-001",
 };
 
 /**
- * Utility to get a generative model instance
+ * Utility to get a generative model instance (for text generation)
  */
-export const getModel = (modelName: string = MODELS.GEMINI_FLASH) => {
-  return genAI.getGenerativeModel({ model: modelName });
+export const getModel = (modelName: string = MODELS.GEMINI_FLASH, apiVersion: string = "v1beta") => {
+  return genAI.getGenerativeModel({ model: modelName }, { apiVersion });
+};
+
+/**
+ * Utility to get embedding model instance
+ */
+export const getEmbeddingModel = () => {
+  return genAI.getGenerativeModel({ model: MODELS.EMBEDDING }, { apiVersion: "v1beta" });
 };

@@ -1,6 +1,6 @@
 import { db } from "../config/drizzle";
 import { embeddings } from "../db/schema";
-import { genAI, MODELS } from "../ai/ai.config";
+import { getEmbeddingModel } from "../ai/ai.config";
 import { v4 as uuidv4 } from "uuid";
 
 export class EmbeddingService {
@@ -26,11 +26,14 @@ export class EmbeddingService {
    */
   static async processMaterial(materialId: string, fullText: string) {
     const textChunks = this.chunkText(fullText);
-    const model = genAI.getGenerativeModel({ model: MODELS.EMBEDDING });
+    const model = getEmbeddingModel();
 
     const embeddingOperations = textChunks.map(async (chunk, index) => {
-      // 1. Generate embedding vector
-      const result = await model.embedContent(chunk);
+      // 1. Generate embedding vector (force 768 dims to match DB schema)
+      const result = await model.embedContent({
+        content: { parts: [{ text: chunk }], role: "user" },
+        outputDimensionality: 768,
+      } as any);
       const vector = result.embedding.values;
 
       // 2. Store in database
@@ -51,8 +54,11 @@ export class EmbeddingService {
    * Helper to generate a single query embedding for vector search (RAG).
    */
   static async generateQueryEmbedding(query: string): Promise<number[]> {
-    const model = genAI.getGenerativeModel({ model: MODELS.EMBEDDING });
-    const result = await model.embedContent(query);
+    const model = getEmbeddingModel();
+    const result = await model.embedContent({
+      content: { parts: [{ text: query }], role: "user" },
+      outputDimensionality: 768,
+    } as any);
     return result.embedding.values;
   }
 }

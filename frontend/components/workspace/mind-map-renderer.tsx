@@ -16,12 +16,14 @@ import { useMindMapStore } from "@/store/use-mindmap-store";
 import MindMapNode from "./mind-map-node";
 import { MindMapNode as APINode } from "@/hooks/use-ai";
 import { ExplanationPanel } from "./explanation-panel";
+import { cn } from "@/lib/utils";
 
 interface MindMapRendererProps {
   apiNodes: APINode[];
+  className?: string;
 }
 
-// Simple tree layout logic (can be replaced with d3-hierarchy for complex trees)
+// Simple tree layout logic
 const layoutNodes = (apiNodes: APINode[]): { nodes: Node[]; edges: Edge[] } => {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
@@ -29,7 +31,6 @@ const layoutNodes = (apiNodes: APINode[]): { nodes: Node[]; edges: Edge[] } => {
   const HORIZONTAL_SPACING = 350;
   const VERTICAL_SPACING = 200;
 
-  // Group by parent to help with positioning
   const byParent: Record<string, APINode[]> = {};
   apiNodes.forEach(node => {
     const pid = node.parentId || "root";
@@ -68,7 +69,7 @@ const layoutNodes = (apiNodes: APINode[]): { nodes: Node[]; edges: Edge[] } => {
   return { nodes, edges };
 };
 
-export function MindMapRenderer({ apiNodes }: MindMapRendererProps) {
+export function MindMapRenderer({ apiNodes, className }: MindMapRendererProps) {
   const { 
     nodes, 
     edges, 
@@ -94,7 +95,7 @@ export function MindMapRenderer({ apiNodes }: MindMapRendererProps) {
   const onPaneClick = useCallback(() => setSelectedNodeId(null), [setSelectedNodeId]);
 
   return (
-    <div className="w-full h-[600px] border border-border/50 rounded-2xl bg-muted/30 overflow-hidden relative">
+    <div className={cn("w-full border border-border/50 rounded-2xl bg-muted/30 overflow-hidden relative", className)}>
       <ReactFlow
         nodes={nodes}
         edges={edges}

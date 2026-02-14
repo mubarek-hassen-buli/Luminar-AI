@@ -10,18 +10,31 @@ import { FileText, Trash2, Brain, ArrowLeft, Loader2, ExternalLink, Sparkles } f
 import Link from "next/link";
 import { format } from "date-fns";
 import { useMindMap, useGenerateMindMap } from "@/hooks/use-ai";
-import { MindMapRenderer } from "@/components/workspace/mind-map-renderer";
 import { useMindMapStore } from "@/store/use-mindmap-store";
 import { cn } from "@/lib/utils";
 
+import { useRouter } from "next/navigation";
+
 export default function WorkspacePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
   const { data: workspace, isLoading: isLoadingWorkspace } = useWorkspace(id);
   const { data: materials, isLoading: isLoadingMaterials } = useMaterials(id);
   const { data: mindMapNodes, isLoading: isLoadingMindMap } = useMindMap(id);
+  
   const generateMindMap = useGenerateMindMap();
   const deleteMutation = useDeleteMaterial();
   const { isGenerating } = useMindMapStore();
+
+  // Redirect to canvas on successful generation
+  const handleGenerate = async () => {
+    try {
+      await generateMindMap.mutateAsync(id);
+      router.push(`/workspaces/${id}/canvas`);
+    } catch (e) {
+      // Error handled by mutation toast
+    }
+  };
 
   if (isLoadingWorkspace) {
     return (
@@ -53,9 +66,17 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           <p className="text-muted-foreground">{workspace.description || "No description provided."}</p>
         </div>
         <div className="flex gap-2">
+          {mindMapNodes && mindMapNodes.length > 0 && (
+            <Link href={`/workspaces/${id}/canvas`}>
+              <Button variant="outline" className="gap-2">
+                <Brain className="w-4 h-4" />
+                Open Canvas
+              </Button>
+            </Link>
+          )}
           <Button 
             disabled={!materials?.length || generateMindMap.isPending || isGenerating}
-            onClick={() => generateMindMap.mutate(id)}
+            onClick={handleGenerate}
             className="relative overflow-hidden group"
           >
             {(generateMindMap.isPending || isGenerating) ? (
@@ -63,7 +84,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             ) : (
               <Sparkles className="mr-2 h-4 w-4 transition-transform group-hover:rotate-12" />
             )}
-            {mindMapNodes?.length ? "Regenerate Mind Map" : "Generate Mind Map"}
+            {mindMapNodes?.length ? "Regenerate Study Map" : "Generate Study Map"}
           </Button>
         </div>
       </div>
@@ -74,22 +95,33 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <Brain className="w-5 h-5 text-primary" />
-              Interactive Study Map
+              Study Canvas
             </h2>
-            {mindMapNodes && mindMapNodes.length > 0 && (
-              <p className="text-xs text-muted-foreground">
-                Tip: Scroll to zoom • Drag to move • Click nodes for AI help
-              </p>
-            )}
           </div>
 
           {isLoadingMindMap ? (
-            <div className="w-full h-[600px] border border-border/50 rounded-2xl bg-muted/20 flex flex-col items-center justify-center gap-4">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground animate-pulse">Loading study graph...</p>
+            <div className="w-full h-48 border border-border/50 rounded-2xl bg-muted/20 flex flex-col items-center justify-center gap-4">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground animate-pulse">Checking for study maps...</p>
             </div>
           ) : mindMapNodes && mindMapNodes.length > 0 ? (
-            <MindMapRenderer apiNodes={mindMapNodes} />
+            <Card className="bg-primary/5 border-primary/20 overflow-hidden relative group cursor-pointer hover:bg-primary/10 transition-colors">
+              <Link href={`/workspaces/${id}/canvas`} className="absolute inset-0 z-10" />
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-primary">
+                  <Sparkles className="w-5 h-5" />
+                  Graph Ready for Exploration!
+                </CardTitle>
+                <CardDescription>
+                  Your interactive study map is active. Jump in to get AI-powered explanations.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="secondary" className="group-hover:translate-x-1 transition-transform">
+                  Enter Infinite Canvas <ExternalLink className="ml-2 w-4 h-4" />
+                </Button>
+              </CardContent>
+            </Card>
           ) : (
             <Card className="bg-muted/30 border-dashed py-12">
               <CardContent className="flex flex-col items-center gap-4">
@@ -99,7 +131,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                 <div className="text-center space-y-1">
                   <p className="font-medium">No Study Map yet</p>
                   <p className="text-sm text-muted-foreground max-w-sm">
-                    Upload your study materials and click "Generate Mind Map" to see the magic happen.
+                    Upload your study materials and click "Generate Study Map" to enter your visual learning canvas.
                   </p>
                 </div>
               </CardContent>
