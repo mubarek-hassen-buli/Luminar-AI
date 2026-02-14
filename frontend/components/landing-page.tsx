@@ -48,8 +48,8 @@ function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-            <Brain className="w-5 h-5 text-primary" />
+          <div className="w-8 h-8 rounded-lg overflow-hidden border border-border/50">
+            <img src="/images/log.jpg" alt="Logo" className="w-full h-full object-cover" />
           </div>
           <span className="text-lg font-bold tracking-tight">Luminar AI</span>
         </Link>
