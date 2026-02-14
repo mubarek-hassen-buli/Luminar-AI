@@ -4,6 +4,7 @@ import { cors } from "hono/cors";
 import { config } from "dotenv";
 import authRoutes from "./routes/auth.routes";
 import workspaceRoutes from "./routes/workspace.routes";
+import materialRoutes from "./routes/material.routes";
 
 config({ path: ".env" });
 
@@ -13,7 +14,7 @@ const port = Number(process.env.PORT) || 3001;
 app.use(
   "/*",
   cors({
-    origin: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+    origin: "http://localhost:3000",
     allowHeaders: ["Content-Type", "Authorization"],
     allowMethods: ["POST", "GET", "OPTIONS", "DELETE"],
     exposeHeaders: ["Content-Length"],
@@ -28,6 +29,7 @@ app.get("/", (c) => {
 
 app.route("/api/auth", authRoutes);
 app.route("/api/workspaces", workspaceRoutes);
+app.route("/api/materials", materialRoutes);
 
 console.log(`Server is running on port ${port}`);
 

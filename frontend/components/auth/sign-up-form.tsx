@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -53,7 +53,7 @@ export function SignUpForm() {
         onSuccess: () => {
           router.push("/workspaces");
         },
-        onError: (ctx) => {
+        onError: (ctx: { error: { message: string } }) => {
           setError(ctx.error.message);
           setIsLoading(false);
         },
