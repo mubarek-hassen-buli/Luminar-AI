@@ -8,8 +8,8 @@ export const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Model constants for consistent usage across the app
 export const MODELS = {
-  GEMINI_PRO: "gemini-1.5-pro",
-  GEMINI_FLASH: "gemini-1.5-flash",
+  GEMINI_PRO: "gemini-2.5-flash",
+  GEMINI_FLASH: "gemini-2.5-flash",
   EMBEDDING: "text-embedding-004",
 };
 
