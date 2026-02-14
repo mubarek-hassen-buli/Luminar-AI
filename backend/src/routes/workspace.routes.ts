@@ -3,6 +3,7 @@ import { WorkspaceService } from "../services/workspace.service";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { z } from "zod";
 import { validator, AppEnv } from "../middleware/validation";
+import { UsageService } from "../services/usage.service";
 
 const workspaceSchema = z.object({
   title: z.string().min(1, "Title is required").max(100),
@@ -35,6 +36,11 @@ workspaces.get("/:id", async (c) => {
 workspaces.post("/", validator("json", workspaceSchema), async (c) => {
   const user = c.get("user");
   const body = c.req.valid("json");
+  
+  // Enforce free tier limit
+  if (!(await UsageService.canCreateWorkspace(user.id))) {
+    return c.json({ error: "Free tier limit reached: Max 3 workspaces." }, 403);
+  }
   
   try {
     const newWorkspace = await WorkspaceService.create(user.id, body);

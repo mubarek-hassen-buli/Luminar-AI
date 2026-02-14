@@ -1,16 +1,10 @@
 import { Hono } from "hono";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { MaterialService } from "../services/material.service";
-import multer from "multer";
+import { UsageService } from "../services/usage.service";
 import { AppEnv } from "../middleware/validation";
 
 const materials = new Hono<AppEnv>();
-
-// Multer setup to store file in memory
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-});
 
 materials.use("*", authMiddleware);
 
@@ -18,9 +12,10 @@ materials.use("*", authMiddleware);
 materials.post("/upload/:workspaceId", async (c) => {
   const workspaceId = c.req.param("workspaceId");
   
-  // Hono doesn't natively support multer as middleware in the same way Express does
-  // We'll use a manual wrapper or rely on c.req.parseBody for simpler cases
-  // However, for Buffer access we need multipart/form-data handling.
+  // Enforce free tier limit
+  if (!(await UsageService.canUploadMaterial(workspaceId))) {
+    return c.json({ error: "Free tier limit reached: Max 1 material per workspace." }, 403);
+  }
   
   try {
     const body = await c.req.parseBody();
@@ -30,7 +25,7 @@ materials.post("/upload/:workspaceId", async (c) => {
       return c.json({ error: "No file uploaded" }, 400);
     }
 
-    // Adapt Hono file object to what MaterialService expects (similar to Multer's file object)
+    // Adapt Hono file object to what MaterialService expects
     const adaptedFile = {
       buffer: Buffer.from(await file.arrayBuffer()),
       originalname: file.name,

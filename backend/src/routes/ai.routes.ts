@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { MindMapService } from "../services/mindmap.service";
 import { ExplanationService, ExplanationStyle } from "../services/explanation.service";
+import { UsageService } from "../services/usage.service";
 import { AppEnv } from "../middleware/validation";
 
 const ai = new Hono<AppEnv>();
@@ -14,6 +15,12 @@ ai.use("*", authMiddleware);
 ai.post("/mindmap/:workspaceId", async (c) => {
   const workspaceId = c.req.param("workspaceId");
   const user = c.get("user");
+
+  // Enforce daily AI request limit
+  if (!(await UsageService.canMakeAIRequest(user.id))) {
+    return c.json({ error: "Daily AI request limit reached (10/day). Please try again tomorrow." }, 403);
+  }
+
   try {
     const mindMap = await MindMapService.generateMindMap(workspaceId, user.id);
     return c.json(mindMap, 201);
@@ -43,6 +50,11 @@ ai.get("/explanation/:nodeId", async (c) => {
   const nodeId = c.req.param("nodeId");
   const style = (c.req.query("style") as ExplanationStyle) || "real-world";
   const user = c.get("user");
+
+  // Enforce daily AI request limit
+  if (!(await UsageService.canMakeAIRequest(user.id))) {
+    return c.json({ error: "Daily AI request limit reached (10/day). Please try again tomorrow." }, 403);
+  }
 
   try {
     const explanation = await ExplanationService.getExplanation(nodeId, style, user.id);

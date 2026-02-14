@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { apiClient } from "@/lib/api-client";
 
 export interface Material {
   id: string;
@@ -10,20 +11,10 @@ export interface Material {
   createdAt: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-
 export function useMaterials(workspaceId: string) {
   return useQuery<Material[]>({
     queryKey: ["materials", workspaceId],
-    queryFn: async () => {
-      const res = await fetch(`${API_URL}/api/materials/${workspaceId}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("better-auth.session-token")}`,
-        },
-      });
-      if (!res.ok) throw new Error("Failed to fetch materials");
-      return res.json();
-    },
+    queryFn: () => apiClient<Material[]>(`/materials/${workspaceId}`),
     enabled: !!workspaceId,
   });
 }
@@ -36,20 +27,15 @@ export function useUploadMaterial() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch(`${API_URL}/api/materials/upload/${workspaceId}`, {
+      // Note: apiClient automatically handles Content-Type for JSON. 
+      // For FormData, we must let the browser set the boundary by passing undefined.
+      return apiClient<any>(`/materials/upload/${workspaceId}`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("better-auth.session-token")}`,
-        },
         body: formData,
+        headers: {
+          "Content-Type": undefined as any,
+        },
       });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to upload material");
-      }
-
-      return res.json();
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["materials", variables.workspaceId] });
@@ -65,16 +51,10 @@ export function useDeleteMaterial() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (materialId: string) => {
-      const res = await fetch(`${API_URL}/api/materials/${materialId}`, {
+    mutationFn: (materialId: string) => 
+      apiClient(`/materials/${materialId}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("better-auth.session-token")}`,
-        },
-      });
-      if (!res.ok) throw new Error("Failed to delete material");
-      return res.json();
-    },
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["materials"] });
       toast.success("Material deleted");
