@@ -10,7 +10,7 @@ export const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 export const MODELS = {
   GEMINI_PRO: "gemini-2.5-flash",
   GEMINI_FLASH: "gemini-2.5-flash",
-  EMBEDDING: "text-embedding-004",
+  EMBEDDING: "text-embedding-001",
 };
 
 /**

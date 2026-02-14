@@ -9,12 +9,19 @@ export async function apiClient<T>(
   // Get token from localStorage (matching use-materials logic)
   const token = typeof window !== "undefined" ? localStorage.getItem("better-auth.session-token") : null;
 
+  // Determine headers
+  const isFormData = options.body instanceof FormData;
+  const hasBody = !!options.body;
+  const headers: Record<string, string> = {
+    ...(hasBody && !isFormData ? { "Content-Type": "application/json" } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
   const response = await fetch(url, {
     ...options,
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...headers,
       ...options.headers,
     },
   });

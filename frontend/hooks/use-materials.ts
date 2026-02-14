@@ -32,9 +32,6 @@ export function useUploadMaterial() {
       return apiClient<any>(`/materials/upload/${workspaceId}`, {
         method: "POST",
         body: formData,
-        headers: {
-          "Content-Type": undefined as any,
-        },
       });
     },
     onSuccess: (_, variables) => {
