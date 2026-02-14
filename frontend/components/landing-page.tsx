@@ -20,6 +20,12 @@ import {
   X,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import localFont from "next/font/local";
+
+const cuteMelody = localFont({
+  src: "../public/fonts/Cute Melody.otf",
+  variable: "--font-cute-melody",
+});
 
 /* ────────────────────────── Navbar ────────────────────────── */
 function Navbar() {
@@ -92,14 +98,10 @@ function Navbar() {
 function Hero() {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-      {/* Animated background */}
+      {/* Grid pattern only (no glows) */}
       <div className="absolute inset-0 -z-10">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/15 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-primary/10 rounded-full blur-[100px] animate-pulse [animation-delay:1s]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[150px]" />
-        {/* Grid pattern */}
         <div
-          className="absolute inset-0 opacity-[0.03]"
+          className="absolute inset-0 opacity-[0.05]"
           style={{
             backgroundImage: `linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px)`,
             backgroundSize: "60px 60px",
@@ -108,16 +110,11 @@ function Hero() {
       </div>
 
       <div className="max-w-4xl mx-auto px-6 text-center space-y-8">
-        <Badge variant="secondary" className="px-4 py-1.5 text-xs font-medium rounded-full border border-primary/20 bg-primary/5 text-primary">
-          <Sparkles className="w-3 h-3 mr-1.5" />
-          AI-Powered Academic Workspace
-        </Badge>
+       
 
-        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1]">
-          Study Smarter,{" "}
-          <span className="bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
-            Not Harder
-          </span>
+        <h1 className={`${cuteMelody.className} text-6xl sm:text-7xl lg:text-8xl font-normal tracking-normal leading-[1.1] text-black`}>
+          Study Smarter, <br />
+          Not Harder
         </h1>
 
         <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
@@ -408,14 +405,25 @@ function Footer() {
 /* ────────────────────────── Main Export ────────────────────────── */
 export function LandingPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground dark">
-      <Navbar />
-      <Hero />
-      <Features />
-      <HowItWorks />
-      <Pricing />
-      <FinalCTA />
-      <Footer />
+    <div className={`${cuteMelody.variable} min-h-screen text-foreground dark relative`}>
+      {/* Global Background Image (Clear) */}
+      <div className="fixed inset-0 -z-10 overflow-hidden bg-background">
+        <img 
+          src="/images/bg-t.jpg" 
+          alt="Background" 
+          className="w-full h-full object-cover opacity-100"
+        />
+      </div>
+
+      <div className="relative z-10">
+        <Navbar />
+        <Hero />
+        <Features />
+        <HowItWorks />
+        <Pricing />
+        <FinalCTA />
+        <Footer />
+      </div>
     </div>
   );
 }
