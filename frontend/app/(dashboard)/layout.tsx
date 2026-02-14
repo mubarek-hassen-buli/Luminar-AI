@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { headers } from "next/headers";
+import { UserNav } from "@/components/workspace/user-nav";
 
 export default async function DashboardLayout({
   children,
@@ -28,16 +29,7 @@ export default async function DashboardLayout({
             <span className="font-bold text-xl tracking-tight">Luminar AI</span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground mr-2">
-              {session.user.name}
-            </span>
-            <div className="w-8 h-8 rounded-full bg-muted border flex items-center justify-center overflow-hidden">
-               {session.user.image ? (
-                 <img src={session.user.image} alt={session.user.name} />
-               ) : (
-                 <span className="text-xs uppercase">{session.user.name.charAt(0)}</span>
-               )}
-            </div>
+            <UserNav user={session.user} />
           </div>
         </div>
       </header>
