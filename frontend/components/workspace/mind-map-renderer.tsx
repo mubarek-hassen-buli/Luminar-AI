@@ -21,10 +21,6 @@ interface MindMapRendererProps {
   apiNodes: APINode[];
 }
 
-const nodeTypes = {
-  mindmap: MindMapNode,
-};
-
 // Simple tree layout logic (can be replaced with d3-hierarchy for complex trees)
 const layoutNodes = (apiNodes: APINode[]): { nodes: Node[]; edges: Edge[] } => {
   const nodes: Node[] = [];
@@ -83,6 +79,11 @@ export function MindMapRenderer({ apiNodes }: MindMapRendererProps) {
     setSelectedNodeId
   } = useMindMapStore();
 
+  // Memoize nodeTypes to avoid React Flow warning 002
+  const nodeTypes = useMemo(() => ({
+    mindmap: MindMapNode,
+  }), []);
+
   useEffect(() => {
     const { nodes: flowNodes, edges: flowEdges } = layoutNodes(apiNodes);
     setNodes(flowNodes);
@@ -93,7 +94,7 @@ export function MindMapRenderer({ apiNodes }: MindMapRendererProps) {
   const onPaneClick = useCallback(() => setSelectedNodeId(null), [setSelectedNodeId]);
 
   return (
-    <div className="w-full h-full min-h-[600px] border border-border/50 rounded-2xl bg-muted/30 overflow-hidden relative">
+    <div className="w-full h-[600px] border border-border/50 rounded-2xl bg-muted/30 overflow-hidden relative">
       <ReactFlow
         nodes={nodes}
         edges={edges}
