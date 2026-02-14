@@ -2,6 +2,7 @@ import { db } from "../config/drizzle";
 import { materials, workspaces } from "../db/schema";
 import { eq, count } from "drizzle-orm";
 import { uploadStream } from "../cloudinary/cloudinary";
+import { EmbeddingService } from "../embeddings/embedding.service";
 import { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
 import { v4 as uuidv4 } from "uuid";
@@ -40,7 +41,7 @@ export class MaterialService {
     const uploadResult = await uploadStream(file.buffer, `workspaces/${workspaceId}`);
 
     // 4. Save to database
-    const newMaterial = await db
+    const [insertedMaterial] = await db
       .insert(materials)
       .values({
         id: uuidv4(),
@@ -51,7 +52,16 @@ export class MaterialService {
       })
       .returning();
 
-    return newMaterial[0];
+    // 5. Generate embeddings for RAG
+    // Note: In production, this should likely be a background job
+    try {
+      await EmbeddingService.processMaterial(insertedMaterial.id, textContent);
+    } catch (error) {
+      console.error("Failed to generate embeddings:", error);
+      // We don't throw here to avoid failing the upload if extraction/upload succeeded
+    }
+
+    return insertedMaterial;
   }
 
   static async listMaterials(workspaceId: string) {

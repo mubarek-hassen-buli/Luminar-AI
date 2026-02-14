@@ -5,6 +5,7 @@ import { config } from "dotenv";
 import authRoutes from "./routes/auth.routes";
 import workspaceRoutes from "./routes/workspace.routes";
 import materialRoutes from "./routes/material.routes";
+import aiRoutes from "./routes/ai.routes";
 
 config({ path: ".env" });
 
@@ -30,6 +31,7 @@ app.get("/", (c) => {
 app.route("/api/auth", authRoutes);
 app.route("/api/workspaces", workspaceRoutes);
 app.route("/api/materials", materialRoutes);
+app.route("/api/ai", aiRoutes);
 
 console.log(`Server is running on port ${port}`);
 
