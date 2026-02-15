@@ -202,7 +202,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
           <div className="space-y-6">
             <section>
               <h2 className="text-xl font-semibold mb-4">Add Material</h2>
-              <UploadZone workspaceId={id} />
+              <UploadZone workspaceId={id} disabled={materials && materials.length >= 1} />
               <p className="text-[10px] text-muted-foreground mt-4 leading-relaxed">
                 **Free Tier Notice:** You can upload 1 academic material per workspace. 
                 The AI will extract text from your PDF or DOCX to generate mind maps and explanations.

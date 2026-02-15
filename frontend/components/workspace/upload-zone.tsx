@@ -8,17 +8,18 @@ import { Button } from "@/components/ui/button";
 
 interface UploadZoneProps {
   workspaceId: string;
+  disabled?: boolean;
 }
 
-export function UploadZone({ workspaceId }: UploadZoneProps) {
+export function UploadZone({ workspaceId, disabled = false }: UploadZoneProps) {
   const [file, setFile] = useState<File | null>(null);
   const uploadMutation = useUploadMaterial();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
+    if (acceptedFiles.length > 0 && !disabled) {
       setFile(acceptedFiles[0]);
     }
-  }, []);
+  }, [disabled]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -27,6 +28,7 @@ export function UploadZone({ workspaceId }: UploadZoneProps) {
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
     },
     maxFiles: 1,
+    disabled: disabled || uploadMutation.isPending,
   });
 
   const handleUpload = async () => {
@@ -44,17 +46,30 @@ export function UploadZone({ workspaceId }: UploadZoneProps) {
       {!file ? (
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed rounded-xl p-12 transition-all cursor-pointer flex flex-col items-center justify-center gap-4 ${
-            isDragActive ? "border-primary bg-primary/5 scale-[0.99]" : "border-border hover:border-primary/50"
+          className={`border-2 border-dashed rounded-xl p-12 transition-all flex flex-col items-center justify-center gap-4 ${
+            disabled 
+              ? "border-muted bg-muted/5 opacity-50 grayscale cursor-not-allowed" 
+              : isDragActive 
+                ? "border-primary bg-primary/5 scale-[0.99] cursor-pointer" 
+                : "border-border hover:border-primary/50 cursor-pointer"
           }`}
         >
           <input {...getInputProps()} />
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <Upload className="w-6 h-6 text-primary" />
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${disabled ? "bg-muted" : "bg-primary/10"}`}>
+            <Upload className={`w-6 h-6 ${disabled ? "text-muted-foreground" : "text-primary"}`} />
           </div>
           <div className="text-center">
-            <p className="text-sm font-medium">Click to upload or drag and drop</p>
-            <p className="text-xs text-muted-foreground mt-1">PDF or DOCX (max. 10MB)</p>
+            {disabled ? (
+              <>
+                <p className="text-sm font-medium">Free Tier Limit Reached</p>
+                <p className="text-xs text-muted-foreground mt-1">1 material per workspace maximum.</p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-medium">Click to upload or drag and drop</p>
+                <p className="text-xs text-muted-foreground mt-1">PDF or DOCX (max. 10MB)</p>
+              </>
+            )}
           </div>
         </div>
       ) : (
