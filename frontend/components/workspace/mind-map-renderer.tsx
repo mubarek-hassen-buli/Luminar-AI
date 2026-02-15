@@ -1,6 +1,5 @@
-"use client";
-
-import { useEffect, useMemo, useCallback } from "react";
+import dagre from "dagre";
+import { useEffect, useMemo, useCallback, useRef } from "react";
 import ReactFlow, { 
   Background, 
   Controls, 
@@ -8,7 +7,9 @@ import ReactFlow, {
   Node,
   Edge,
   ConnectionLineType,
-  Panel
+  Panel,
+  useReactFlow,
+  ReactFlowProvider
 } from "reactflow";
 import "reactflow/dist/style.css";
 
@@ -23,56 +24,45 @@ interface MindMapRendererProps {
   className?: string;
 }
 
-// Simple tree layout logic
-const layoutNodes = (apiNodes: APINode[]): { nodes: Node[]; edges: Edge[] } => {
-  const nodes: Node[] = [];
-  const edges: Edge[] = [];
+const nodeWidth = 250;
+const nodeHeight = 150;
 
-  const HORIZONTAL_SPACING = 350;
-  const VERTICAL_SPACING = 200;
+const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = "TB") => {
+  const dagreGraph = new dagre.graphlib.Graph();
+  dagreGraph.setDefaultEdgeLabel(() => ({}));
+  dagreGraph.setGraph({ rankdir: direction, ranksep: 100, nodesep: 80 });
 
-  const byParent: Record<string, APINode[]> = {};
-  apiNodes.forEach(node => {
-    const pid = node.parentId || "root";
-    if (!byParent[pid]) byParent[pid] = [];
-    byParent[pid].push(node);
+  nodes.forEach((node) => {
+    dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
   });
 
-  const positionNode = (node: APINode, x: number, y: number) => {
-    nodes.push({
-      id: node.id,
-      type: "mindmap",
-      position: { x, y },
-      data: { label: node.label, content: node.content },
-    });
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
 
-    const children = byParent[node.id] || [];
-    const totalWidth = children.length * HORIZONTAL_SPACING;
-    let startX = x - totalWidth / 2 + HORIZONTAL_SPACING / 2;
+  dagre.layout(dagreGraph);
 
-    children.forEach((child, index) => {
-      edges.push({
-        id: `e-${node.id}-${child.id}`,
-        source: node.id,
-        target: child.id,
-        type: ConnectionLineType.SmoothStep,
-        animated: true,
-        style: { stroke: "var(--primary)", strokeWidth: 2, opacity: 0.5 },
-      });
-      positionNode(child, startX + index * HORIZONTAL_SPACING, y + VERTICAL_SPACING);
-    });
-  };
+  const updatedNodes = nodes.map((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id);
+    return {
+      ...node,
+      targetPosition: "top",
+      sourcePosition: "bottom",
+      position: {
+        x: nodeWithPosition.x - nodeWidth / 2,
+        y: nodeWithPosition.y - nodeHeight / 2,
+      },
+    } as Node;
+  });
 
-  const roots = apiNodes.filter(n => !n.parentId);
-  roots.forEach((root, i) => positionNode(root, i * 1000, 0));
-
-  return { nodes, edges };
+  return { nodes: updatedNodes, edges };
 };
 
-export function MindMapRenderer({ apiNodes, className }: MindMapRendererProps) {
+function FlowInner({ apiNodes }: { apiNodes: APINode[] }) {
   const { 
     nodes, 
     edges, 
+    expandedNodeIds,
     onNodesChange, 
     onEdgesChange, 
     setNodes, 
@@ -80,46 +70,116 @@ export function MindMapRenderer({ apiNodes, className }: MindMapRendererProps) {
     setSelectedNodeId
   } = useMindMapStore();
 
-  // Memoize nodeTypes to avoid React Flow warning 002
+  const { fitView } = useReactFlow();
+  const isInitialLoad = useRef(true);
+
   const nodeTypes = useMemo(() => ({
     mindmap: MindMapNode,
   }), []);
 
+  // 1. Initial Root Expansion
   useEffect(() => {
-    const { nodes: flowNodes, edges: flowEdges } = layoutNodes(apiNodes);
-    setNodes(flowNodes);
-    setEdges(flowEdges);
-  }, [apiNodes, setNodes, setEdges]);
+    if (apiNodes.length > 0 && expandedNodeIds.size === 0) {
+      const roots = apiNodes.filter(n => !n.parentId);
+      roots.forEach(root => {
+        if (!expandedNodeIds.has(root.id)) {
+          useMindMapStore.getState().toggleNodeExpansion(root.id);
+        }
+      });
+    }
+  }, [apiNodes]);
 
-  // Deselect node when clicking canvas
+  // 2. Layout & Visibility Logic
+  useEffect(() => {
+    if (!apiNodes.length) return;
+
+    const visibleNodesSet = new Set<string>();
+    const roots = apiNodes.filter(n => !n.parentId);
+    
+    const collectVisible = (node: APINode) => {
+      visibleNodesSet.add(node.id);
+      if (expandedNodeIds.has(node.id)) {
+        const children = apiNodes.filter(n => n.parentId === node.id);
+        children.forEach(collectVisible);
+      }
+    };
+
+    roots.forEach(collectVisible);
+
+    const flowNodes: Node[] = apiNodes
+      .filter(n => visibleNodesSet.has(n.id))
+      .map(n => ({
+        id: n.id,
+        type: "mindmap",
+        data: { 
+          label: n.label, 
+          content: n.content,
+          hasChildren: apiNodes.some(child => child.parentId === n.id),
+          isExpanded: expandedNodeIds.has(n.id)
+        },
+        position: { x: 0, y: 0 },
+      }));
+
+    const flowEdges: Edge[] = [];
+    apiNodes.forEach(child => {
+      if (child.parentId && visibleNodesSet.has(child.id) && visibleNodesSet.has(child.parentId)) {
+        flowEdges.push({
+          id: `e-${child.parentId}-${child.id}`,
+          source: child.parentId,
+          target: child.id,
+          type: ConnectionLineType.SmoothStep,
+          animated: true,
+          style: { stroke: "var(--primary)", strokeWidth: 2, opacity: 0.5 },
+        });
+      }
+    });
+
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(flowNodes, flowEdges);
+    
+    setNodes(layoutedNodes);
+    setEdges(layoutedEdges);
+
+    // 3. Auto-fit view after layout settle
+    // We use a small timeout to ensure React Flow has rendered the new nodes
+    setTimeout(() => {
+      fitView({ duration: 600, padding: 0.2 });
+    }, 50);
+
+  }, [apiNodes, expandedNodeIds, setNodes, setEdges, fitView]);
+
   const onPaneClick = useCallback(() => setSelectedNodeId(null), [setSelectedNodeId]);
 
   return (
-    <div className={cn("w-full border border-border/50 rounded-2xl bg-muted/30 overflow-hidden relative", className)}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        nodeTypes={nodeTypes}
-        onPaneClick={onPaneClick}
-        fitView
-        className="bg-dot-pattern"
-      >
-        <Background color="#888" gap={20} />
-        <Controls />
-        <MiniMap 
-          nodeColor="#3b82f6"
-          maskColor="rgba(0, 0, 0, 0.1)"
-          className="rounded-lg border border-border/50" 
-        />
-        
-        <Panel position="top-right" className="bg-background/80 backdrop-blur-md p-2 rounded-lg border border-border/50 shadow-sm text-xs text-muted-foreground font-medium">
-          Interactive Study Graph
-        </Panel>
-      </ReactFlow>
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      nodeTypes={nodeTypes}
+      onPaneClick={onPaneClick}
+      className="bg-dot-pattern"
+    >
+      <Background color="#888" gap={20} />
+      <Controls />
+      <MiniMap 
+        nodeColor="#3b82f6"
+        maskColor="rgba(0, 0, 0, 0.1)"
+        className="rounded-lg border border-border/50" 
+      />
+      <Panel position="top-right" className="bg-background/80 backdrop-blur-md p-2 rounded-lg border border-border/50 shadow-sm text-xs text-muted-foreground font-medium">
+        Interactive Study Graph
+      </Panel>
+    </ReactFlow>
+  );
+}
 
-      <ExplanationPanel />
+export function MindMapRenderer({ apiNodes, className }: MindMapRendererProps) {
+  return (
+    <div className={cn("w-full border border-border/50 rounded-2xl bg-muted/30 overflow-hidden relative", className)}>
+      <ReactFlowProvider>
+        <FlowInner apiNodes={apiNodes} />
+        <ExplanationPanel />
+      </ReactFlowProvider>
     </div>
   );
 }

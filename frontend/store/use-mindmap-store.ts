@@ -4,6 +4,7 @@ import { Node, Edge, Connection, OnNodesChange, OnEdgesChange, applyNodeChanges,
 interface MindMapState {
   nodes: Node[];
   edges: Edge[];
+  expandedNodeIds: Set<string>;
   selectedNodeId: string | null;
   isGenerating: boolean;
   explanation: Record<string, string>; // Maps nodeId to explanation text
@@ -12,6 +13,7 @@ interface MindMapState {
   setEdges: (edges: Edge[]) => void;
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
+  toggleNodeExpansion: (nodeId: string) => void;
   setSelectedNodeId: (id: string | null) => void;
   setGenerating: (isGenerating: boolean) => void;
   setExplanation: (nodeId: string, text: string) => void;
@@ -21,6 +23,7 @@ interface MindMapState {
 export const useMindMapStore = create<MindMapState>((set, get) => ({
   nodes: [],
   edges: [],
+  expandedNodeIds: new Set(),
   selectedNodeId: null,
   isGenerating: false,
   explanation: {},
@@ -37,6 +40,18 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
   onEdgesChange: (changes) => {
     set({
       edges: applyEdgeChanges(changes, get().edges),
+    });
+  },
+
+  toggleNodeExpansion: (nodeId) => {
+    set((state) => {
+      const newExpanded = new Set(state.expandedNodeIds);
+      if (newExpanded.has(nodeId)) {
+        newExpanded.delete(nodeId);
+      } else {
+        newExpanded.add(nodeId);
+      }
+      return { expandedNodeIds: newExpanded };
     });
   },
 
