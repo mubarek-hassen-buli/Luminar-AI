@@ -26,6 +26,8 @@ const formSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
+import Link from "next/link";
+
 export function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -62,61 +64,93 @@ export function SignUpForm() {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Create Account</CardTitle>
-        <CardDescription>Get started with Luminar AI today.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <div className="w-full space-y-10">
+      <div className="space-y-3">
+        <h1 className="text-4xl font-bold tracking-tight text-foreground">
+          Join Luminar AI
+        </h1>
+        <p className="text-muted-foreground text-sm lg:text-base leading-relaxed">
+          Create an account and start mastering your studies with the power of artificial intelligence.
+        </p>
+      </div>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-4">
             <FormField
               control={form.control}
               name="name"
-              render={({ field }: { field: any }) => (
+              render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel className="text-xs uppercase font-bold tracking-widest text-muted-foreground">Full Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="John Doe" {...field} />
+                    <Input 
+                      placeholder="John Doe" 
+                      className="h-12 bg-muted/30 border-border/50 focus:border-primary/50 transition-all rounded-xl px-4"
+                      {...field} 
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-[10px]" />
                 </FormItem>
               )}
             />
             <FormField
               control={form.control}
               name="email"
-              render={({ field }: { field: any }) => (
+              render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel className="text-xs uppercase font-bold tracking-widest text-muted-foreground">Email Address</FormLabel>
                   <FormControl>
-                    <Input placeholder="student@university.edu" {...field} />
+                    <Input 
+                      placeholder="student@university.edu" 
+                      className="h-12 bg-muted/30 border-border/50 focus:border-primary/50 transition-all rounded-xl px-4"
+                      {...field} 
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-[10px]" />
                 </FormItem>
               )}
             />
             <FormField
               control={form.control}
               name="password"
-              render={({ field }: { field: any }) => (
+              render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel className="text-xs uppercase font-bold tracking-widest text-muted-foreground">Create Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <Input 
+                      type="password" 
+                      placeholder="••••••••" 
+                      className="h-12 bg-muted/30 border-border/50 focus:border-primary/50 transition-all rounded-xl px-4"
+                      {...field} 
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-[10px]" />
                 </FormItem>
               )}
             />
-            {error && <div className="text-sm text-red-500">{error}</div>}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign Up
+          </div>
+
+          {error && (
+            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs font-medium">
+              {error}
+            </div>
+          )}
+
+          <div className="space-y-6">
+            <Button type="submit" className="w-full h-12 rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all" disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Create Free Account"}
             </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+          </div>
+        </form>
+      </Form>
+
+      <p className="text-center text-sm text-muted-foreground">
+        Already have an account?{" "}
+        <Link href="/sign-in" className="text-primary font-bold hover:underline transition-all">
+          Sign In
+        </Link>
+      </p>
+    </div>
   );
 }
