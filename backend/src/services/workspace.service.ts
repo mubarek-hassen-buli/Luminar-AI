@@ -40,10 +40,16 @@ export class WorkspaceService {
   }
 
   static async delete(id: string, userId: string) {
+    // Backend guard to completely prevent workspace deletion as requested
+    throw new Error("Action not allowed: Workspace deletion has been disabled for security and data retention.");
+    
+    // Original deletion code kept commented out for reference
+    /*
     const [deleted] = await db
       .delete(workspaces)
       .where(and(eq(workspaces.id, id), eq(workspaces.userId, userId)))
       .returning();
     return deleted;
+    */
   }
 }
