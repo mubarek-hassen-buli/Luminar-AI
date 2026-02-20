@@ -75,7 +75,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             </Link>
           )}
           <Button 
-            disabled={!materials?.length || generateMindMap.isPending || isGenerating}
+            disabled={!materials?.length || generateMindMap.isPending || isGenerating || (mindMapNodes && mindMapNodes.length > 0)}
             onClick={handleGenerate}
             className="relative overflow-hidden group"
           >
@@ -84,7 +84,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
             ) : (
               <Sparkles className="mr-2 h-4 w-4 transition-transform group-hover:rotate-12" />
             )}
-            {mindMapNodes?.length ? "Regenerate Study Map" : "Generate Study Map"}
+            {mindMapNodes && mindMapNodes.length > 0 ? "Study Map Generated" : "Generate Study Map"}
           </Button>
         </div>
       </div>
