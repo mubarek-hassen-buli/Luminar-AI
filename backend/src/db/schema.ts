@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, integer, vector } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, integer, vector, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const user = pgTable("user", {
@@ -19,7 +19,9 @@ export const workspaces = pgTable("workspaces", {
   title: text("title").notNull(),
   description: text("description"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  userIdIdx: index("workspace_user_id_idx").on(table.userId),
+}));
 
 export const materials = pgTable("materials", {
   id: text("id").primaryKey(),
@@ -30,7 +32,9 @@ export const materials = pgTable("materials", {
   cloudinaryUrl: text("cloudinary_url").notNull(),
   extractedText: text("extracted_text").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  workspaceIdIdx: index("material_workspace_id_idx").on(table.workspaceId),
+}));
 
 export const mindmap_nodes = pgTable("mindmap_nodes", {
   id: text("id").primaryKey(),
@@ -42,7 +46,10 @@ export const mindmap_nodes = pgTable("mindmap_nodes", {
   content: text("content"),
   depth: integer("depth").notNull().default(0),
   order: integer("order").notNull().default(0),
-});
+}, (table) => ({
+  workspaceIdIdx: index("node_workspace_id_idx").on(table.workspaceId),
+  parentIdIdx: index("node_parent_id_idx").on(table.parentId),
+}));
 
 export const embeddings = pgTable("embeddings", {
   id: text("id").primaryKey(),
@@ -52,7 +59,9 @@ export const embeddings = pgTable("embeddings", {
   chunkText: text("chunk_text").notNull(),
   embedding: vector("embedding", { dimensions: 768 }),
   chunkIndex: integer("chunk_index").notNull(),
-});
+}, (table) => ({
+  materialIdIdx: index("embedding_material_id_idx").on(table.materialId),
+}));
 
 export const ai_requests_log = pgTable("ai_requests_log", {
   id: text("id").primaryKey(),

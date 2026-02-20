@@ -1,6 +1,7 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { compress } from "hono/compress";
 import { config } from "dotenv";
 import authRoutes from "./routes/auth.routes";
 import workspaceRoutes from "./routes/workspace.routes";
@@ -23,6 +24,8 @@ app.use(
     credentials: true,
   })
 );
+
+app.use("*", compress());
 
 app.get("/", (c) => {
   return c.text("Luminar AI Backend is Running");
