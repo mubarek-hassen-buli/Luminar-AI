@@ -186,7 +186,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ id: string
                             size="icon"
                             className="hover:text-destructive transition-colors"
                             onClick={() => deleteMutation.mutate(material.id)}
-                            disabled={deleteMutation.isPending}
+                            disabled={deleteMutation.isPending || (mindMapNodes && mindMapNodes.length > 0)}
+                            title={mindMapNodes && mindMapNodes.length > 0 ? "Cannot delete material after a study map is generated" : "Delete material"}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>

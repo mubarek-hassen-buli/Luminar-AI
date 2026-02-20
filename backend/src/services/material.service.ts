@@ -1,5 +1,5 @@
 import { db } from "../config/drizzle";
-import { materials, workspaces } from "../db/schema";
+import { materials, workspaces, mindmap_nodes } from "../db/schema";
 import { eq, count } from "drizzle-orm";
 import { uploadStream } from "../cloudinary/cloudinary";
 import { EmbeddingService } from "../embeddings/embedding.service";
@@ -69,6 +69,25 @@ export class MaterialService {
   }
 
   static async deleteMaterial(materialId: string) {
+    // 1. Find the material's workspaceId
+    const [material] = await db.select().from(materials).where(eq(materials.id, materialId));
+    
+    if (!material) {
+      throw new Error("Material not found");
+    }
+
+    // 2. Check if a mind map has already been generated for this workspace
+    // If nodes exist, we block the deletion to prevent the cheat loophole
+    const [nodeCount] = await db
+      .select({ count: count() })
+      .from(mindmap_nodes)
+      .where(eq(mindmap_nodes.workspaceId, material.workspaceId));
+
+    if (nodeCount.count > 0) {
+      throw new Error("Cheat prevention: Cannot delete material after a study map is generated. Create a new workspace.");
+    }
+
+    // 3. Delete the material
     return await db.delete(materials).where(eq(materials.id, materialId)).returning();
   }
 }
